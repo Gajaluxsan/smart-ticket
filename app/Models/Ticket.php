@@ -16,8 +16,6 @@ class Ticket extends Model
         'body',
         'status',
         'category',
-        'confidence',
-        'explanation',
         'note',
     ];
 

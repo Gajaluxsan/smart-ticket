@@ -29,28 +29,10 @@
                                 Tickets
                             </router-link>
                         </li>
-                        <li class="app-layout__nav-item">
-                            <router-link 
-                                to="/analytics" 
-                                class="app-layout__nav-link"
-                                :class="{ 'app-layout__nav-link--active': $route.path === '/analytics' }"
-                            >
-                                Analytics
-                            </router-link>
-                        </li>
-                        <li class="app-layout__nav-item">
-                            <router-link 
-                                to="/settings" 
-                                class="app-layout__nav-link"
-                                :class="{ 'app-layout__nav-link--active': $route.path === '/settings' }"
-                            >
-                                Settings
-                            </router-link>
-                        </li>
                     </ul>
                 </nav>
                 
-                <!-- Theme Toggle Button -->
+                <!-- Toggle Button -->
                 <button 
                     class="theme-toggle" 
                     @click="toggleTheme"
@@ -78,7 +60,7 @@
             </div>
         </header>
 
-        <!-- Main Content -->
+        <!-- Main  -->
         <main class="app-layout__main">
             <router-view />
         </main>
@@ -94,12 +76,11 @@ export default {
         }
     },
     mounted() {
-        // Check for saved theme preference or default to light mode
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme) {
-            this.isDarkMode = savedTheme === 'dark';
+            this.isDarkMode = (savedTheme === 'dark');
         } else {
-            // Check system preference
+            // Check system preference by default
             this.isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
         }
         this.applyTheme();
@@ -108,7 +89,6 @@ export default {
         toggleTheme() {
             this.isDarkMode = !this.isDarkMode;
             this.applyTheme();
-            // Save preference to localStorage
             localStorage.setItem('theme', this.isDarkMode ? 'dark' : 'light');
         },
         applyTheme() {
