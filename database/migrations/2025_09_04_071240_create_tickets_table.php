@@ -12,7 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('tickets', function (Blueprint $table) {
-            $table->id();
+            $table->ulid('id')->primary();
+            $table->string('subject')->nullable();
+            $table->text('body')->nullable();
+            $table->enum('status', ['pending', 'open', 'in_progress', 'closed'])->default('pending');
+            $table->string('category')->nullable();
+            $table->float('confidence')->nullable();
+            $table->text('explanation')->nullable();
+            $table->text('note')->nullable();
             $table->timestamps();
         });
     }
