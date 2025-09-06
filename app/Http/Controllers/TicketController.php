@@ -6,6 +6,8 @@ use App\Enums\TicketStatus;
 use App\Http\Resources\TicketResources;
 use App\Models\Ticket;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\Rule;
 
 class TicketController extends Controller
@@ -31,7 +33,7 @@ class TicketController extends Controller
             $query->where('category', 'like', '%' . $category . '%');
         });
         
-        $tickets = $query->paginate($request->per_page ?? 10);
+        $tickets = $query->orderBy('created_at', 'desc')->paginate($request->per_page ?? 10);
 
         return [
             'tickets' =>  TicketResources::collection($tickets), 
@@ -46,12 +48,12 @@ class TicketController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request) : TicketResources
     {
         $validated = $request->validate([
             'subject' => 'required|string|max:255',
             'body' => 'required|string',
-            'status' => ['required', Rule::in(TicketStatus::toArray())],
+            'status' => ['required', Rule::in(TicketStatus::cases())],
         ]);
 
         $ticket = Ticket::create($validated);
@@ -61,7 +63,7 @@ class TicketController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Ticket $ticket)
+    public function show(Ticket $ticket) : TicketResources
     {
         return new TicketResources($ticket);
     }
@@ -70,15 +72,16 @@ class TicketController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Ticket $ticket)
+    public function update(Request $request, Ticket $ticket) : TicketResources
     {
         $validated = $request->validate([
-            'subject' => 'required|string|max:255',
-            'body' => 'required|string',
-            'status' => ['required', Rule::in(TicketStatus::toArray())],
+            'status' => ['required', Rule::in(TicketStatus::cases())],
+            'category' => 'nullable|string|max:255',
+            'note' => 'nullable|string',
         ]);
 
         $ticket->update($validated);
+        $ticket->refresh();
         return new TicketResources($ticket);
     }
 
@@ -87,27 +90,35 @@ class TicketController extends Controller
 
     }
 
-    public function dashboardStats()
+    public function dashboardStats() : JsonResponse
     {
-        $tickets = Ticket::count();
-        $statusesCount = [
-            'total' => $tickets ?? 0,
-        ];
-        foreach (TicketStatus::cases() as $status) {
-            $statusesCount[$status->value] = Ticket::where('status', $status->value)->count() ?? 0;
-        }
-        $categories = Ticket::select('category')->distinct()->get();
-        
-        $categoriesCount = [];
-        if ($categories->count() > 0) {
-            foreach ($categories as $category) {
-                $categoriesCount[$category->category] = Ticket::where('category', $category->category)->count() ?? 0;
-            }
-        }
-
+        // Status counts
+        $statusCounts = Ticket::select('status', DB::raw('COUNT(*) as count'))
+            ->groupBy('status')
+            ->pluck('count', 'status');
+    
+        // Category counts
+        $categoryCounts = Ticket::select('category', DB::raw('COUNT(*) as count'))
+            ->groupBy('category')
+            ->pluck('count', 'category');
+    
         return response()->json([
-            'statuses' => $statusesCount,
-            'categories' => $categoriesCount,
+            'statuses' => [
+                'labels'   => array_keys($statusCounts->toArray()),
+                'datasets' => [[
+                    'data' => array_values($statusCounts->toArray()),
+                ]],
+                'total'    => $statusCounts->sum(),
+            ],
+            'categories' => [
+                'labels'   => array_keys($categoryCounts->toArray()),
+                'datasets' => [[
+                    'data' => array_values($categoryCounts->toArray()),
+                ]],
+                'total'    => $categoryCounts->sum(),
+            ],
+            'total' => Ticket::count(),
+            'statusesCount' => $statusCounts->toArray(),
         ]);
     }
 }

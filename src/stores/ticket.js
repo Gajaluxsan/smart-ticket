@@ -15,8 +15,27 @@ export const useTicketStore = defineStore('ticket', {
         total: 0,
         createModal: false,
         statuses: [],
+        errors: [],
         categories: [],
-        dashboardStats: [],
+        dashboardStats: {
+            total: 0,
+            statuses: {
+                labels: [],
+                datasets: [],
+                total: 0,
+            },
+            categories: {
+                labels: [],
+                datasets: [],
+                total: 0,
+            },
+            statusesCount: {
+                closed: 0,
+                open: 0,
+                resolved: 0,
+                in_progress: 0,
+            },
+        },
     }),
     actions: {
         async getTickets() {
@@ -33,24 +52,37 @@ export const useTicketStore = defineStore('ticket', {
             });
         },
         async getTicket(id) {
-            const response = await getTicket(id);
-            this.ticket = response.data;
+            return await getTicket(id).then( async (res)=>{
+                return res.data;
+            });
         },
         async createTicket(ticket) {
             await createTicket(ticket).then((res)=>{
                 this.ticket = res.data;
                 this.createModal = false;
+                this.getTickets();
             }).catch((err)=>{
+                const { message, errors } = err.response.data;
+                this.errors = errors;
                 console.error('Error creating ticket:', err);
             });
         },
         async getDashboardStats() {
-            const response = await getDashboardStats();
-            this.dashboardStats = response.data;
+            await getDashboardStats().then((res)=>{
+                const { statuses, categories, total, statusesCount } = res;
+                this.dashboardStats.statuses.labels = statuses.labels;
+                this.dashboardStats.statuses.datasets = statuses.datasets;
+                this.dashboardStats.categories = categories;
+                this.dashboardStats.total = total;
+                this.dashboardStats.statusesCount = statusesCount;
+            });
         },
         async classifyTicket(id) {
             const response = await classifyTicket(id);
             this.ticket = response.data;
+        },
+        resetErrors() {
+            this.errors = [];
         },
         openCreateModal() {
             this.createModal = true;

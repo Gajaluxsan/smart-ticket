@@ -11,8 +11,7 @@ export const getTickets = async ( page, per_page, search, status, category ) => 
 
 export const getTicket = async (id) => {
     try {
-        const response = await axios.get(`/api/tickets/${id}`).then(handleResponse);
-        return response;
+        return await axios.get(`/api/tickets/${id}`).then(handleResponse);
     } catch (error) {
         console.error('Error getting ticket:', error);
         throw error;
@@ -30,10 +29,18 @@ export const createTicket = async (ticket) => {
 
 export const getDashboardStats = async () => {
     try {
-        const response = await axios.get('/api/stats').then(handleResponse);
-        return response;
+        return await axios.get('/api/stats').then(handleResponse);
     } catch (error) {
         console.error('Error getting dashboard stats:', error);
+        throw error;
+    }
+}
+
+export const updateTicket = async (id, ticketData) => {
+    try {
+        return await axios.put(`/api/tickets/${id}`, ticketData).then(handleResponse);
+    } catch (error) {
+        console.error('Error updating ticket:', error);
         throw error;
     }
 }
@@ -48,9 +55,9 @@ export const classifyTicket = async (id) => {
 }
 
 const handleResponse = (response) => {
-    if (response.status === 200) {
+    if ([200, 201].includes(response.status)) {
         return response?.data;
-    } else if (response.status === 422) {
+    } else if ([422].includes(response.status)) {
         return Promise.reject(error);
     } else {
         return Promise.reject(error);

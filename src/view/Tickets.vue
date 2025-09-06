@@ -130,22 +130,7 @@ export default {
             openCreateModal: 'openCreateModal',
             closeCreateModal: 'closeCreateModal',
             createTicket: 'createTicket',
-        }),
-        async createTicket() {
-            this.creatingTicket = true
-            try {
-                await axios.post('/api/tickets', this.newTicket)
-                this.closeNewTicketModal()
-                this.getTicketsAll()
-                alert('Ticket created successfully!')
-            } catch (error) {
-                console.error('Error creating ticket:', error)
-                alert('Failed to create ticket')
-            } finally {
-                this.creatingTicket = false
-            }
-        },
-        
+        }),       
         async classifyTicket(ticketId) {
             this.classifyingTickets.add(ticketId)
             try {

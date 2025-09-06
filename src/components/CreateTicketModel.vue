@@ -8,15 +8,21 @@
                 </button>
             </div>
 
-            <form @submit.prevent="createTicket" class="modal__body">
+            <form @submit.prevent="onSubmitCreateTicket" class="modal__body">
                 <div class="form__group">
                     <label class="form__label">Subject</label>
                     <input
                         type="text"
                         v-model="ticket.subject"
                         class="form__input"
-                        required
+                        :class="{ 'form__input--error': errors.subject }"
                     />
+                    <div class="form__error" v-if="v$.ticket.subject.$errors[0]">
+                        {{ v$.ticket.subject.$errors[0].$message }}
+                    </div>
+                    <div class="form__error" v-else-if="errors.subject">
+                        {{ errors.subject[0] }}
+                    </div>
                 </div>
 
                 <div class="form__group">
@@ -24,9 +30,42 @@
                     <textarea
                         v-model="ticket.body"
                         class="form__textarea"
+                        :class="{ 'form__textarea--error': errors.body }"
                         rows="4"
-                        required
                     ></textarea>
+                    <div class="form__error" v-if="v$.ticket.body.$errors[0]">
+                        {{ v$.ticket.body.$errors[0].$message }}
+                    </div>
+                    <div class="form__error" v-else-if="errors.body">
+                        {{ errors.body[0] }}
+                    </div>
+                </div>
+
+                <div class="form__group">
+                    <label class="form__label">Note</label>
+                    <textarea
+                        v-model="ticket.note"
+                        class="form__textarea"
+                        :class="{ 'form__textarea--error': errors.note }"
+                        rows="4"
+                    ></textarea>
+                    <div class="form__error" v-if="errors.note">
+                        {{ errors.note[0] }}
+                    </div>
+                </div>
+
+                <div class="form__group">
+                    <label class="form__label">Status</label>
+                    <select
+                        v-model="ticket.status"
+                        class="form__select"
+                        :class="{ 'form__select--error': errors.status }"
+                    >
+                        <option v-for="status in statuses" :value="status.value">{{ status.label }}</option>
+                    </select>
+                    <div class="form__error" v-if="errors.status">
+                        {{ errors.status[0] }}
+                    </div>
                 </div>
 
                 <div class="modal__actions">
@@ -40,10 +79,8 @@
                     <button
                         type="submit"
                         class="btn btn--primary"
-                        :disabled="creatingTicket"
                     >
-                        <span v-if="creatingTicket" class="spinner"></span>
-                        <span v-else>Create Ticket</span>
+                        Create Ticket
                     </button>
                 </div>
             </form>
@@ -53,11 +90,14 @@
 <script>
 import { useTicketStore } from '../stores/ticket';
 import { mapState, mapActions } from 'pinia';
+import { useVuelidate } from '@vuelidate/core'
+import { required } from '@vuelidate/validators'
 
 export default {
     name: 'CreateTicketModel',
     data() {
         return {
+            v$: useVuelidate(),
             ticket: {
                 subject: '',
                 body: '',
@@ -67,18 +107,46 @@ export default {
             },
         }
     },
+    validations() {
+        return {
+            ticket: {
+                subject: { required },
+                body: { required },
+            }
+        }
+    },
+    created() {
+        this.resetForm();
+    },
     computed: {
         ...mapState(useTicketStore, {
             createModal: 'createModal',
+            statuses: 'statuses',
+            errors: 'errors',
         }),
     },
     methods: {
         ...mapActions(useTicketStore, {
             createTicket: 'createTicket',
             closeCreateModal: 'closeCreateModal',
+            resetErrors: 'resetErrors',
         }),
-        async createTicket() {
+        async onSubmitCreateTicket() {
+            const isValid = await this.v$.$validate();
+            if (!isValid) {
+                return;
+            }
             await this.createTicket(this.ticket);
+        },
+        resetForm() {
+            this.resetErrors();
+            this.ticket = {
+                subject: '',
+                body: '',
+                status: 'pending',
+                category: '',
+                note: '',
+            };
         },
     },
 }
