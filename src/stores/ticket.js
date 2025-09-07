@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { getTickets, getTicket, createTicket, getDashboardStats, classifyTicket } from '../api/ticket';
+import { getTickets, getTicket, createTicket, getDashboardStats } from '../api/ticket';
 
 export const useTicketStore = defineStore('ticket', {
     state: () => ({
@@ -76,10 +76,6 @@ export const useTicketStore = defineStore('ticket', {
                 this.dashboardStats.total = total;
                 this.dashboardStats.statusesCount = statusesCount;
             });
-        },
-        async classifyTicket(id) {
-            const response = await classifyTicket(id);
-            this.ticket = response.data;
         },
         resetErrors() {
             this.errors = [];

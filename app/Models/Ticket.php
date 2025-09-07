@@ -17,10 +17,14 @@ class Ticket extends Model
         'status',
         'category',
         'note',
+        'confidence',
+        'explanation',
+        'is_category_manual',
     ];
 
     protected $casts = [
         'status' => TicketStatus::class,
+        'is_category_manual' => 'boolean',
     ];
 
 }

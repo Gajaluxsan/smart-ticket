@@ -60,8 +60,10 @@
 
         <TicketTable 
             :tickets="tickets" 
-            @classifyTicket="classifyTicket" 
+            @classifyTicket="onClassifyTicket" 
             :loading="loading" 
+            :classifyingId="classifyingId"
+            :classifyingLoading="classifyingLoading"
             :total="total" 
             :perPage="perPage" 
             :currentPage="currentPage" 
@@ -77,6 +79,7 @@ import { useTicketStore } from '../stores/ticket'
 import { mapActions, mapState } from 'pinia';
 import TicketTable from '../components/TicketTable.vue';
 import CreateTicketModel from '../components/CreateTicketModel.vue';
+import { classifyTicket } from '../api/ticket';
 
 export default {
     name: 'Tickets',
@@ -86,23 +89,8 @@ export default {
     },
     data() {
         return {
-            
-            // Pagination
-            
-            // Filters & Search
-            searchQuery: '',
-            statusFilter: '',
-            categoryFilter: '',
-            
-            // UI State
-            classifyingTickets: new Set(),
-            creatingTicket: false,
-            
-            // New ticket form
-            newTicket: {
-                subject: '',
-                body: ''
-            }
+            classifyingLoading: false,
+            classifyingId: null,
         }
     },
     computed: {
@@ -131,18 +119,22 @@ export default {
             closeCreateModal: 'closeCreateModal',
             createTicket: 'createTicket',
         }),       
-        async classifyTicket(ticketId) {
-            this.classifyingTickets.add(ticketId)
-            try {
-                await axios.post(`/api/tickets/${ticketId}/classify`)
-                this.getTicketsAll()
-                alert('Ticket classification started!')
-            } catch (error) {
-                console.error('Error classifying ticket:', error)
-                alert('Failed to classify ticket')
-            } finally {
-                this.classifyingTickets.delete(ticketId)
-            }
+        async onClassifyTicket(ticketId) {
+            this.classifyingLoading = true;
+            this.classifyingId = ticketId;
+            await classifyTicket(ticketId).then((res) => {
+                const {message, data} = res;
+                if (data.status == 'success') {
+                    this.tickets.find(ticket => ticket.id == ticketId).category = data.category;
+                    this.tickets.find(ticket => ticket.id == ticketId).confidence = data.confidence;
+                    this.tickets.find(ticket => ticket.id == ticketId).explanation = data.explanation;
+                }
+            }).catch((err) => {
+                console.error('Error classifying ticket:', err);
+            }).finally(() => {
+                this.classifyingLoading = false;
+                this.classifyingId = null;
+            });
         },
         
         handleSearch() {

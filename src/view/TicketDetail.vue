@@ -233,7 +233,7 @@ export default {
     },
     methods: {
         ...mapActions(useTicketStore, {
-            getTicket: 'getTicket'
+            getTicket: 'getTicket',
         }),
         async loadTicket() {
             this.loading = true;
@@ -295,8 +295,13 @@ export default {
             try {
                 const ticketId = this.$route.params?.id;
                 await classifyTicket(ticketId).then((res) => {
-                    console.log(res);
-                    this.ticket = res.data;
+                    const {message, data} = res;
+                    if (data.status == 'success') {
+                        this.ticket = data;
+                        this.ticket.category = data.category;
+                        this.ticket.confidence = data.confidence;
+                        this.ticket.explanation = data.explanation;
+                    } 
                     this.classifying = false;
                 }).catch((err) => {
                     console.error('Error classifying ticket:', err);

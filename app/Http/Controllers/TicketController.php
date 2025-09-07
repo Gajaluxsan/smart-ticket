@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\TicketStatus;
 use App\Http\Resources\TicketResources;
 use App\Models\Ticket;
+use App\Services\TicketClassifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
@@ -81,13 +82,26 @@ class TicketController extends Controller
         ]);
 
         $ticket->update($validated);
+        if($request->category != $ticket->category) {
+            $ticket->update(['is_category_manual' => true]);
+        }
         $ticket->refresh();
         return new TicketResources($ticket);
     }
 
     public function classify(Request $request, Ticket $ticket)
     {
-
+        $classifier = new TicketClassifier();
+        $response = $classifier->classify($ticket);
+        if ($response['status'] == 'success') {
+            $ticket->update([
+                'category' => $response['category'],
+                'confidence' => $response['confidence'],
+                'explanation' => $response['explanation'],
+            ]);
+            return response()->json(['message' => 'Ticket classified successfully', 'data' => $response]);
+        }
+        return response()->json(['message' => 'Ticket not classified', 'data' => $response]);
     }
 
     public function dashboardStats() : JsonResponse

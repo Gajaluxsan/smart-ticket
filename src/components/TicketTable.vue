@@ -105,8 +105,10 @@
                             <button
                                 class="btn btn--secondary btn--small"
                                 @click="classifyTicket(ticket.id)"
+                                :disabled="classifyingLoading && classifyingId == ticket.id"
                             >
-                                Classify
+                                <span v-if="classifyingLoading && classifyingId == ticket.id" class="spinner"></span>
+                                {{ classifyingLoading && classifyingId == ticket.id ? 'Classifying...' : 'Classify' }}
                             </button>
                         </td>
                     </tr>
@@ -147,6 +149,14 @@ export default {
         },
         loading: {
             type: Boolean,
+            required: true,
+        },
+        classifyingLoading: {
+            type: Boolean,
+            required: true,
+        },
+        classifyingId: {
+            type: String,
             required: true,
         },
         total: {
